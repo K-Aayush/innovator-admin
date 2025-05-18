@@ -10,6 +10,7 @@ import { loginSchema } from "@/validation/schema";
 import { authService } from "@/services/auth.service";
 import { toast } from "@/components/ui/sonner";
 import Image from "next/image";
+import { AxiosError } from "axios";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,7 +40,16 @@ export default function LoginPage() {
         toast.success("Logged in successfully!");
       }
     } catch (err) {
-      console.log(err);
+      console.log("Login error:", err);
+      if (err instanceof AxiosError && err.response) {
+        //400, 401 and 500 error
+        toast.error(err.response.error.error);
+      } else if (err instanceof Error) {
+        //unexpected errors
+        toast.error(err.message || "An error occured while login");
+      } else {
+        toast.error("Something went wrong");
+      }
     } finally {
       setIsLoading(false);
     }
