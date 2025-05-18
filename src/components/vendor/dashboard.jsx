@@ -17,27 +17,48 @@ import {
 } from "recharts";
 
 export function VendorDashboard() {
-  const [stats, setStats] = useState({
-    totalProducts: 0,
-    totalCategories: 0,
-    totalCustomers: 0,
-    recentOrders: [],
-    salesData: [],
-  });
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    // Fetch dashboard stats
-    const fetchStats = async () => {
+    const fetchData = async () => {
       try {
-        const response = await vendorService.getDashboardStats();
-        setStats(response.data);
+        const [productsRes, categoriesRes] = await Promise.all([
+          vendorService.getProducts(),
+          vendorService.getCategories(),
+        ]);
+
+        setProducts(productsRes.data);
+        setCategories(categoriesRes.data);
       } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
+        console.error("Error fetching dashboard data:", error);
       }
     };
 
-    fetchStats();
+    fetchData();
   }, []);
+
+  // Calculate total stock value
+  const totalStockValue = products.reduce((acc, product) => {
+    return acc + product.price * product.stock;
+  }, 0);
+
+  // Group products by category for the chart
+  const productsByCategory = products.reduce((acc, product) => {
+    const categoryName = product.category.name;
+    if (!acc[categoryName]) {
+      acc[categoryName] = {
+        name: categoryName,
+        count: 0,
+        value: 0,
+      };
+    }
+    acc[categoryName].count += 1;
+    acc[categoryName].value += product.price * product.stock;
+    return acc;
+  }, {});
+
+  const chartData = Object.values(productsByCategory);
 
   return (
     <div className="space-y-6">
@@ -45,7 +66,7 @@ export function VendorDashboard() {
         <Card className="p-6">
           <h3 className="text-sm font-medium text-gray-500">Total Products</h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {stats.totalProducts}
+            {products.length}
           </p>
         </Card>
         <Card className="p-6">
@@ -53,59 +74,69 @@ export function VendorDashboard() {
             Total Categories
           </h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {stats.totalCategories}
+            {categories.length}
           </p>
         </Card>
         <Card className="p-6">
-          <h3 className="text-sm font-medium text-gray-500">Total Customers</h3>
+          <h3 className="text-sm font-medium text-gray-500">
+            Total Stock Value
+          </h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            {stats.totalCustomers}
+            ${totalStockValue.toFixed(2)}
           </p>
         </Card>
         <Card className="p-6">
-          <h3 className="text-sm font-medium text-gray-500">Total Sales</h3>
-          <p className="mt-2 text-3xl font-semibold text-gray-900">$12,345</p>
+          <h3 className="text-sm font-medium text-gray-500">Average Price</h3>
+          <p className="mt-2 text-3xl font-semibold text-gray-900">
+            $
+            {products.length
+              ? (
+                  products.reduce((acc, p) => acc + p.price, 0) /
+                  products.length
+                ).toFixed(2)
+              : "0.00"}
+          </p>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Sales Overview
+            Products by Category
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.salesData}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
+                <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#f97316"
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
+                <Bar dataKey="count" fill="#f97316" name="Number of Products" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
         <Card className="p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">
-            Product Performance
+            Stock Value by Category
           </h3>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={stats.productPerformance}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Bar dataKey="sales" fill="#f97316" />
-              </BarChart>
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#f97316"
+                  name="Stock Value"
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
@@ -113,54 +144,40 @@ export function VendorDashboard() {
 
       <Card className="p-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">
-          Recent Orders
+          Recent Products
         </h3>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order ID
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Name
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Category
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Product
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Price
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Stock
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {stats.recentOrders.map((order) => (
-                <tr key={order.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    #{order.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {order.customer}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {order.product}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${order.amount}
+              {products.slice(0, 5).map((product) => (
+                <tr key={product._id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {product.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        order.status === "completed"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {order.status}
-                    </span>
+                    {product.category.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    ${product.price}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {product.stock}
                   </td>
                 </tr>
               ))}
