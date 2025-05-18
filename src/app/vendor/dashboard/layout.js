@@ -3,13 +3,13 @@ import { Header } from "@/components/vendor/header";
 
 export default function VendorDashboardLayout({ children }) {
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300 lg:pl-20">
+    <div className="flex min-h-screen bg-gray-100">
+      <div className="w-20 lg:w-72 transition-all duration-300">
+        <Sidebar />
+      </div>
+      <div className="flex-1">
         <Header />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-          {children}
-        </main>
+        <main className="p-6">{children}</main>
       </div>
     </div>
   );

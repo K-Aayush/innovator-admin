@@ -40,7 +40,7 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        "fixed inset-y-0 z-50 flex flex-col transition-all duration-300 bg-white border-r border-gray-200",
+        "fixed h-full bg-white border-r border-gray-200 transition-all duration-300",
         isExpanded ? "w-72" : "w-20"
       )}
     >
@@ -48,7 +48,7 @@ export function Sidebar() {
         {isExpanded ? (
           <img className="h-8 w-auto" src="/logo.jpg" alt="Logo" />
         ) : (
-          <div className="w-8" /> // Placeholder for spacing
+          <div className="w-8" />
         )}
         <Button
           variant="ghost"

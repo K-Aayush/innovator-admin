@@ -6,12 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { vendorService } from "@/services/vendor.service";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [newCategory, setNewCategory] = useState({ name: "", description: "" });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+  });
 
   const fetchCategories = async () => {
     try {
@@ -29,19 +34,37 @@ export function CategoriesPage() {
     fetchCategories();
   }, []);
 
-  const handleAddCategory = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await vendorService.addCategory(newCategory);
-      toast.success("Category added successfully");
-      setNewCategory({ name: "", description: "" });
+      if (editingCategory) {
+        await vendorService.updateCategory(editingCategory._id, formData);
+        toast.success("Category updated successfully");
+      } else {
+        await vendorService.addCategory(formData);
+        toast.success("Category added successfully");
+      }
+      setIsModalOpen(false);
+      setEditingCategory(null);
+      setFormData({ name: "", description: "" });
       fetchCategories();
     } catch (error) {
-      toast.error("Failed to add category");
+      toast.error(
+        editingCategory ? "Failed to update category" : "Failed to add category"
+      );
     }
   };
 
-  const handleDeleteCategory = async (id) => {
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+    setFormData({
+      name: category.name,
+      description: category.description,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
     try {
       await vendorService.deleteCategory(id);
       toast.success("Category deleted successfully");
@@ -55,48 +78,82 @@ export function CategoriesPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Categories</h1>
+        <Button
+          className="bg-orange-500 hover:bg-orange-600"
+          onClick={() => {
+            setEditingCategory(null);
+            setFormData({ name: "", description: "" });
+            setIsModalOpen(true);
+          }}
+        >
+          <Plus className="mr-2 h-4 w-4" /> Add Category
+        </Button>
       </div>
 
-      <Card className="p-6">
-        <form onSubmit={handleAddCategory} className="mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Category Name
-              </label>
-              <Input
-                value={newCategory.name}
-                onChange={(e) =>
-                  setNewCategory({ ...newCategory, name: e.target.value })
-                }
-                placeholder="Enter category name"
-                required
-              />
+      {/* Category Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-lg p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                {editingCategory ? "Edit Category" : "Add New Category"}
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsModalOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <Input
-                value={newCategory.description}
-                onChange={(e) =>
-                  setNewCategory({
-                    ...newCategory,
-                    description: e.target.value,
-                  })
-                }
-                placeholder="Enter category description"
-              />
-            </div>
-          </div>
-          <Button
-            type="submit"
-            className="mt-4 bg-orange-500 hover:bg-orange-600"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Category
-          </Button>
-        </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Category Name
+                </label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="Enter category name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Description
+                </label>
+                <Input
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Enter category description"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  {editingCategory ? "Update" : "Add"} Category
+                </Button>
+              </div>
+            </form>
+          </Card>
+        </div>
+      )}
 
+      <Card className="p-6">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead>
@@ -122,13 +179,22 @@ export function CategoriesPage() {
                     {category.description}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteCategory(category._id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(category)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(category._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
