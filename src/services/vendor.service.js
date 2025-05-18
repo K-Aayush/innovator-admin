@@ -12,6 +12,11 @@ export const vendorService = {
     return response.data;
   },
 
+  updateCategory: async (id, data) => {
+    const response = await apiClient.put(`/vendor-update-category/${id}`, data);
+    return response.data;
+  },
+
   deleteCategory: async (id) => {
     const response = await apiClient.delete(`/vendor-delete-category/${id}`);
     return response.data;
@@ -32,6 +37,11 @@ export const vendorService = {
 
   addProduct: async (data) => {
     const response = await apiClient.post("/vendor-add-shop", data);
+    return response.data;
+  },
+
+  updateProduct: async (id, data) => {
+    const response = await apiClient.put(`/vendor-update-shop/${id}`, data);
     return response.data;
   },
 
