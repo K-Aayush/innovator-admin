@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
-  Categories,
+  FolderTree,
   Settings,
   Users,
   Bell,
@@ -18,7 +18,7 @@ const navigation = [
   {
     name: "Categories",
     href: "/vendor/dashboard/categories",
-    icon: Categories,
+    icon: FolderTree,
   },
   { name: "Customers", href: "/vendor/dashboard/customers", icon: Users },
   {
@@ -42,30 +42,33 @@ export function Sidebar() {
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <ul role="list" className="-mx-2 space-y-1">
-                {navigation.map((item) => (
-                  <li key={item.name}>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        pathname === item.href
-                          ? "bg-gray-50 text-orange-600"
-                          : "text-gray-700 hover:text-orange-600 hover:bg-gray-50",
-                        "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
-                      )}
-                    >
-                      <item.icon
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.name}>
+                      <Link
+                        href={item.href}
                         className={cn(
                           pathname === item.href
-                            ? "text-orange-600"
-                            : "text-gray-400 group-hover:text-orange-600",
-                          "h-6 w-6 shrink-0"
+                            ? "bg-gray-50 text-orange-600"
+                            : "text-gray-700 hover:text-orange-600 hover:bg-gray-50",
+                          "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                         )}
-                        aria-hidden="true"
-                      />
-                      {item.name}
-                    </Link>
-                  </li>
-                ))}
+                      >
+                        <Icon
+                          className={cn(
+                            pathname === item.href
+                              ? "text-orange-600"
+                              : "text-gray-400 group-hover:text-orange-600",
+                            "h-6 w-6 shrink-0"
+                          )}
+                          aria-hidden="true"
+                        />
+                        {item.name}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </li>
           </ul>
