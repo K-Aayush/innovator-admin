@@ -10,5 +10,7 @@ export const productSchema = z.object({
   description: z.string().min(1, "Description is required"),
   price: z.string().min(1, "Price is required").transform(Number),
   stock: z.string().min(1, "Stock is required").transform(Number),
-  category: z.string().min(1, "Category is required"),
+  content: z.string().min(1, "Content is required"),
+  categoryId: z.string().min(1, "Category is required"),
+  images: z.any().optional(),
 });

@@ -35,38 +35,25 @@ export const vendorService = {
     return response.data;
   },
 
-  addProduct: async (data) => {
-    const response = await apiClient.post("/vendor-add-shop", data);
+  addProduct: async (formData) => {
+    const response = await apiClient.post("/vendor-add-shop", formData);
     return response.data;
   },
 
-  updateProduct: async (id, data) => {
-    const response = await apiClient.put(`/vendor-update-shop/${id}`, data);
+  updateProduct: async (id, formData) => {
+    const response = await apiClient.put(`/vendor-products/${id}`, formData);
     return response.data;
   },
 
   updateStock: async (id, stock) => {
-    const response = await apiClient.post(`/vendor-update-shop/${id}`, {
+    const response = await apiClient.patch(`/vendor-products/${id}/stock`, {
       stock,
     });
     return response.data;
   },
 
   deleteProduct: async (id) => {
-    const response = await apiClient.delete(`/vendor-delete-shop/${id}`);
-    return response.data;
-  },
-
-  uploadImages: async (formData) => {
-    const response = await apiClient.post(
-      "/vendor-upload-shop-images",
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
+    const response = await apiClient.delete(`/vendor-products/${id}`);
     return response.data;
   },
 };

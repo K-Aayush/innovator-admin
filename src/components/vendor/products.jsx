@@ -5,8 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { vendorService } from "@/services/vendor.service";
-import { toast } from "sonner";
-import { Plus, Pencil, Trash2, X } from "lucide-react";
+import toast from "@/components/ui/sonner";
+import { Plus, Pencil, Trash2, X, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { productSchema } from "@/validation/schema";
@@ -20,6 +20,8 @@ export function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
 
   const {
     register,
@@ -51,6 +53,10 @@ export function ProductsPage() {
     try {
       const response = await vendorService.getCategories();
       setCategories(response.data);
+      // Preselect first category if available
+      if (response.data.length > 0 && !editingProduct) {
+        setValue("categoryId", response.data[0]._id);
+      }
     } catch (error) {
       toast.error("Failed to fetch categories");
     }
@@ -67,17 +73,17 @@ export function ProductsPage() {
       toast.success("Product deleted successfully");
       fetchProducts();
     } catch (error) {
-      toast.error("Failed to delete product");
+      toast.error(error.response?.data?.message || "Failed to delete product");
     }
   };
 
   const handleUpdateStock = async (id, stock) => {
     try {
-      await vendorService.updateStock(id, stock);
+      await vendorService.updateStock(id, Number(stock));
       toast.success("Stock updated successfully");
       fetchProducts();
     } catch (error) {
-      toast.error("Failed to update stock");
+      toast.error(error.response?.data?.message || "Failed to update stock");
     }
   };
 
@@ -87,27 +93,61 @@ export function ProductsPage() {
     setValue("description", product.description);
     setValue("price", product.price.toString());
     setValue("stock", product.stock.toString());
-    setValue("category", product.category._id);
+    setValue("content", product.content);
+    setValue("categoryId", product.category._id);
+    setPreviewImages(product.images || []);
+    setSelectedImages([]);
     setIsModalOpen(true);
   };
 
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedImages(files);
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setPreviewImages(previews);
+    setValue("images", files);
+  };
+
   const onSubmit = async (data) => {
+    console.log("Form data:", data);
+    console.log("categoryId:", data.categoryId);
     try {
+      const formData = new FormData();
+      formData.append("name", data.name);
+      formData.append("description", data.description);
+      formData.append("price", data.price);
+      formData.append("stock", data.stock);
+      formData.append("content", data.content);
+      formData.append("categoryId", data.categoryId);
+
+      if (selectedImages.length > 0) {
+        selectedImages.forEach((image) => {
+          formData.append("images", image);
+        });
+      }
+
       if (editingProduct) {
-        await vendorService.updateProduct(editingProduct._id, data);
+        await vendorService.updateProduct(editingProduct._id, formData);
         toast.success("Product updated successfully");
       } else {
-        await vendorService.addProduct(data);
+        await vendorService.addProduct(formData);
         toast.success("Product added successfully");
       }
       setIsModalOpen(false);
       setEditingProduct(null);
+      setSelectedImages([]);
+      setPreviewImages([]);
       reset();
       fetchProducts();
     } catch (error) {
-      toast.error(
-        editingProduct ? "Failed to update product" : "Failed to add product"
-      );
+      console.error("Error submitting product:", error);
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error(
+          editingProduct ? "Failed to update product" : "Failed to add product"
+        );
+      }
     }
   };
 
@@ -119,7 +159,13 @@ export function ProductsPage() {
           className="bg-orange-500 hover:bg-orange-600"
           onClick={() => {
             setEditingProduct(null);
+            setSelectedImages([]);
+            setPreviewImages([]);
             reset();
+            // Preselect first category if available
+            if (categories.length > 0) {
+              setValue("categoryId", categories[0]._id);
+            }
             setIsModalOpen(true);
           }}
         >
@@ -127,10 +173,9 @@ export function ProductsPage() {
         </Button>
       </div>
 
-      {/* Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <Card className="w-full max-w-lg p-6">
+          <Card className="w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">
                 {editingProduct ? "Edit Product" : "Add New Product"}
@@ -171,6 +216,21 @@ export function ProductsPage() {
                 )}
               </div>
               <div>
+                <label className="block text-sm font-medium mb-1">
+                  Content
+                </label>
+                <Input
+                  {...register("content")}
+                  className={errors.content ? "border-red-500" : ""}
+                  placeholder="e.g., 250ml glass bottle"
+                />
+                {errors.content && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.content.message}
+                  </p>
+                )}
+              </div>
+              <div>
                 <label className="block text-sm font-medium mb-1">Price</label>
                 <Input
                   type="number"
@@ -202,22 +262,63 @@ export function ProductsPage() {
                   Category
                 </label>
                 <select
-                  {...register("category")}
+                  {...register("categoryId")}
                   className={`w-full rounded-md border ${
-                    errors.category ? "border-red-500" : "border-input"
+                    errors.categoryId ? "border-red-500" : "border-input"
                   } px-3 py-2`}
                 >
-                  <option value="">Select a category</option>
-                  {categories.map((category) => (
-                    <option key={category._id} value={category._id}>
-                      {category.name}
-                    </option>
-                  ))}
+                  {categories.length === 0 ? (
+                    <option value="">No categories available</option>
+                  ) : (
+                    categories.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.name}
+                      </option>
+                    ))
+                  )}
                 </select>
-                {errors.category && (
+                {errors.categoryId && (
                   <p className="text-red-500 text-sm mt-1">
-                    {errors.category.message}
+                    {errors.categoryId.message}
                   </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Images</label>
+                <div className="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md">
+                  <div className="space-y-1 text-center">
+                    <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                    <div className="flex text-sm text-gray-600">
+                      <label className="relative cursor-pointer rounded-md font-medium text-orange-600 hover:text-orange-500">
+                        <span>Upload files</span>
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={handleImageChange}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                {errors.images && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.images.message}
+                  </p>
+                )}
+                {previewImages.length > 0 && (
+                  <div className="mt-4 grid grid-cols-3 gap-4">
+                    {previewImages.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-24 object-cover rounded"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className="flex justify-end gap-2">
@@ -266,6 +367,15 @@ export function ProductsPage() {
           {products.map((product) => (
             <Card key={product._id} className="p-4">
               <div className="flex flex-col h-full">
+                {product.images && product.images.length > 0 && (
+                  <div className="mb-4">
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-48 object-cover rounded"
+                    />
+                  </div>
+                )}
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-lg font-semibold">{product.name}</h3>
@@ -290,9 +400,10 @@ export function ProductsPage() {
                     </Button>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 mb-2">
                   {product.description}
                 </p>
+                <p className="text-sm text-gray-500 mb-4">{product.content}</p>
                 <div className="mt-auto">
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold">${product.price}</span>
