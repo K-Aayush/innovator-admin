@@ -8,8 +8,19 @@ export const loginSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(1, "Description is required"),
-  price: z.string().min(1, "Price is required").transform(Number),
-  stock: z.string().min(1, "Stock is required").transform(Number),
+  price: z
+    .string()
+    .min(1, "Price is required")
+    .transform((val) => parseFloat(val))
+    .refine((val) => !isNaN(val) && val > 0, "Price must be a positive number"),
+  stock: z
+    .string()
+    .min(1, "Stock is required")
+    .transform((val) => parseInt(val))
+    .refine(
+      (val) => !isNaN(val) && val >= 0,
+      "Stock must be a non-negative number"
+    ),
   content: z.string().min(1, "Content is required"),
   categoryId: z.string().min(1, "Category is required"),
   images: z.any().optional(),

@@ -1,4 +1,3 @@
-// ProductsPage.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { vendorService } from "@/services/vendor.service";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { Plus, Pencil, Trash2, X, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,7 +42,6 @@ export function ProductsPage() {
         search,
         selectedCategory
       );
-      console.log("Fetched products:", response.data);
       const validProducts = response.data.filter(
         (product) =>
           product &&
@@ -89,7 +87,6 @@ export function ProductsPage() {
   const fetchCategories = async () => {
     try {
       const response = await vendorService.getCategories();
-      console.log("Fetched categories:", response.data);
       setCategories(response.data);
       if (response.data.length > 0 && !editingProduct) {
         setValue("categoryId", response.data[0]._id);
@@ -109,9 +106,11 @@ export function ProductsPage() {
 
   const handleDelete = async (id) => {
     try {
-      await vendorService.deleteProduct(id);
-      toast.success("Product deleted successfully");
-      fetchProducts();
+      const response = await vendorService.deleteProduct(id);
+      if (response.status === 200) {
+        toast.success(response.message || "Product deleted successfully");
+        fetchProducts();
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete product");
     }
@@ -119,9 +118,11 @@ export function ProductsPage() {
 
   const handleUpdateStock = async (id, stock) => {
     try {
-      await vendorService.updateStock(id, Number(stock));
-      toast.success("Stock updated successfully");
-      fetchProducts();
+      const response = await vendorService.updateStock(id, Number(stock));
+      if (response.status === 200) {
+        toast.success(response.message || "Stock updated successfully");
+        fetchProducts();
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update stock");
     }
@@ -142,36 +143,48 @@ export function ProductsPage() {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
     setSelectedImages(files);
     const previews = files.map((file) => URL.createObjectURL(file));
     setPreviewImages(previews);
-    setValue("images", files);
   };
 
   const onSubmit = async (data) => {
-    console.log("Form data:", data);
     try {
       const formData = new FormData();
+
+      // Add basic product information
       formData.append("name", data.name);
       formData.append("description", data.description);
-      formData.append("price", data.price);
-      formData.append("stock", data.stock);
+      formData.append("price", data.price.toString());
+      formData.append("stock", data.stock.toString());
       formData.append("content", data.content);
       formData.append("categoryId", data.categoryId);
 
+      // Handle image uploads
       if (selectedImages.length > 0) {
-        selectedImages.forEach((image) => {
-          formData.append("images", image);
+        selectedImages.forEach((image, index) => {
+          formData.append(`images`, image);
         });
       }
 
+      let response;
       if (editingProduct) {
-        await vendorService.updateProduct(editingProduct._id, formData);
-        toast.success("Product updated successfully");
+        response = await vendorService.updateProduct(
+          editingProduct._id,
+          formData
+        );
+        if (response.status === 200) {
+          toast.success(response.message || "Product updated successfully");
+        }
       } else {
-        await vendorService.addProduct(formData);
-        toast.success("Product added successfully");
+        response = await vendorService.addProduct(formData);
+        if (response.status === 201) {
+          toast.success(response.message || "Product added successfully");
+        }
       }
+
       setIsModalOpen(false);
       setEditingProduct(null);
       setSelectedImages([]);
@@ -180,12 +193,10 @@ export function ProductsPage() {
       fetchProducts();
     } catch (error) {
       console.error("Error submitting product:", error);
-      toast.error(
+      const errorMessage =
         error.response?.data?.message ||
-          (editingProduct
-            ? "Failed to update product"
-            : "Failed to add product")
-      );
+        (editingProduct ? "Failed to update product" : "Failed to add product");
+      toast.error(errorMessage);
     }
   };
 
