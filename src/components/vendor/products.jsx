@@ -1,3 +1,4 @@
+// ProductsPage.jsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,11 +6,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { vendorService } from "@/services/vendor.service";
-import toast from "@/components/ui/sonner";
+import { toast } from "@/components/ui/sonner";
 import { Plus, Pencil, Trash2, X, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { productSchema } from "@/validation/schema";
+import Image from "next/image";
 
 export function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -41,9 +43,44 @@ export function ProductsPage() {
         search,
         selectedCategory
       );
-      setProducts(response.data);
+      console.log("Fetched products:", response.data);
+      const validProducts = response.data.filter(
+        (product) =>
+          product &&
+          product._id &&
+          product.name &&
+          product.category &&
+          product.category._id &&
+          product.category.name
+      );
+      if (validProducts.length < response.data.length) {
+        console.warn(
+          "Filtered out invalid products:",
+          response.data.filter(
+            (product) =>
+              !product ||
+              !product._id ||
+              !product.name ||
+              !product.category ||
+              !product.category._id ||
+              !product.category.name
+          )
+        );
+        toast.warning(
+          "Some products could not be displayed due to missing or invalid data."
+        );
+      }
+      setProducts(validProducts);
     } catch (error) {
-      toast.error("Failed to fetch products");
+      console.error("Error fetching products:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to fetch products. Please try again later."
+      );
     } finally {
       setLoading(false);
     }
@@ -52,13 +89,16 @@ export function ProductsPage() {
   const fetchCategories = async () => {
     try {
       const response = await vendorService.getCategories();
+      console.log("Fetched categories:", response.data);
       setCategories(response.data);
-      // Preselect first category if available
       if (response.data.length > 0 && !editingProduct) {
         setValue("categoryId", response.data[0]._id);
       }
     } catch (error) {
-      toast.error("Failed to fetch categories");
+      console.error("Error fetching categories:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to fetch categories"
+      );
     }
   };
 
@@ -93,8 +133,8 @@ export function ProductsPage() {
     setValue("description", product.description);
     setValue("price", product.price.toString());
     setValue("stock", product.stock.toString());
-    setValue("content", product.content);
-    setValue("categoryId", product.category._id);
+    setValue("content", product.content || "");
+    setValue("categoryId", product.category?._id || categories[0]?._id || "");
     setPreviewImages(product.images || []);
     setSelectedImages([]);
     setIsModalOpen(true);
@@ -110,7 +150,6 @@ export function ProductsPage() {
 
   const onSubmit = async (data) => {
     console.log("Form data:", data);
-    console.log("categoryId:", data.categoryId);
     try {
       const formData = new FormData();
       formData.append("name", data.name);
@@ -141,13 +180,12 @@ export function ProductsPage() {
       fetchProducts();
     } catch (error) {
       console.error("Error submitting product:", error);
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error(
-          editingProduct ? "Failed to update product" : "Failed to add product"
-        );
-      }
+      toast.error(
+        error.response?.data?.message ||
+          (editingProduct
+            ? "Failed to update product"
+            : "Failed to add product")
+      );
     }
   };
 
@@ -162,7 +200,6 @@ export function ProductsPage() {
             setSelectedImages([]);
             setPreviewImages([]);
             reset();
-            // Preselect first category if available
             if (categories.length > 0) {
               setValue("categoryId", categories[0]._id);
             }
@@ -363,67 +400,75 @@ export function ProductsPage() {
           </select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {products.map((product) => (
-            <Card key={product._id} className="p-4">
-              <div className="flex flex-col h-full">
-                {product.images && product.images.length > 0 && (
-                  <div className="mb-4">
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-48 object-cover rounded"
-                    />
-                  </div>
-                )}
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold">{product.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      {product.category.name}
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEdit(product)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(product._id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {product.description}
-                </p>
-                <p className="text-sm text-gray-500 mb-4">{product.content}</p>
-                <div className="mt-auto">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-semibold">${product.price}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">Stock:</span>
-                      <Input
-                        type="number"
-                        value={product.stock}
-                        onChange={(e) =>
-                          handleUpdateStock(product._id, e.target.value)
-                        }
-                        className="w-20 h-8"
+        {loading ? (
+          <p>Loading products...</p>
+        ) : products.length === 0 ? (
+          <p>No products found.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {products.map((product) => (
+              <Card key={product._id} className="p-4">
+                <div className="flex flex-col h-full">
+                  {product.images && product.images.length > 0 && (
+                    <div className="mb-4">
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="w-full h-48 object-cover rounded"
                       />
+                    </div>
+                  )}
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-lg font-semibold">{product.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {product.category?.name || "No category"}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(product)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(product._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {product.description}
+                  </p>
+                  <p className="text-sm text-gray-500 mb-4">
+                    {product.content || "No content"}
+                  </p>
+                  <div className="mt-auto">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold">${product.price}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">Stock:</span>
+                        <Input
+                          type="number"
+                          value={product.stock}
+                          onChange={(e) =>
+                            handleUpdateStock(product._id, e.target.value)
+                          }
+                          className="w-20 h-8"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
         <div className="mt-6 flex justify-between items-center">
           <Button
