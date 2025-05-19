@@ -38,20 +38,30 @@ export function CategoriesPage() {
     e.preventDefault();
     try {
       if (editingCategory) {
-        await vendorService.updateCategory(editingCategory._id, formData);
-        toast.success("Category updated successfully");
+        const response = await vendorService.updateCategory(
+          editingCategory._id,
+          formData
+        );
+        if (response.status === 200) {
+          toast.success(response.message || "Category updated successfully");
+        }
       } else {
-        await vendorService.addCategory(formData);
-        toast.success("Category added successfully");
+        const response = await vendorService.addCategory(formData);
+        if (response.status === 201) {
+          toast.success(response.message || "Category added successfully");
+        }
       }
       setIsModalOpen(false);
       setEditingCategory(null);
       setFormData({ name: "", description: "" });
       fetchCategories();
     } catch (error) {
-      toast.error(
-        editingCategory ? "Failed to update category" : "Failed to add category"
-      );
+      const errorMessage =
+        error.response?.data?.message ||
+        (editingCategory
+          ? "Failed to update category"
+          : "Failed to add category");
+      toast.error(errorMessage);
     }
   };
 
@@ -66,11 +76,13 @@ export function CategoriesPage() {
 
   const handleDelete = async (id) => {
     try {
-      await vendorService.deleteCategory(id);
-      toast.success("Category deleted successfully");
+      const response = await vendorService.deleteCategory(id);
+      if (response.status === 200) {
+        toast.success(response.message || "Category deleted successfully");
+      }
       fetchCategories();
     } catch (error) {
-      toast.error("Failed to delete category");
+      toast.error(error.response?.data?.message || "Failed to delete category");
     }
   };
 
