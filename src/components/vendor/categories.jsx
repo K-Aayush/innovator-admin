@@ -7,12 +7,23 @@ import { Input } from "@/components/ui/input";
 import { vendorService } from "@/services/vendor.service";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -74,15 +85,19 @@ export function CategoriesPage() {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
+    if (!categoryToDelete) return;
+
     try {
-      const response = await vendorService.deleteCategory(id);
+      const response = await vendorService.deleteCategory(categoryToDelete._id);
       if (response.status === 200) {
         toast.success(response.message || "Category deleted successfully");
+        fetchCategories();
       }
-      fetchCategories();
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete category");
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -102,7 +117,6 @@ export function CategoriesPage() {
         </Button>
       </div>
 
-      {/* Category Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <Card className="w-full max-w-lg p-6">
@@ -165,6 +179,30 @@ export function CategoriesPage() {
         </div>
       )}
 
+      <AlertDialog
+        open={!!categoryToDelete}
+        onOpenChange={() => setCategoryToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              category.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="p-6">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -202,7 +240,7 @@ export function CategoriesPage() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(category._id)}
+                        onClick={() => setCategoryToDelete(category)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
