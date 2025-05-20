@@ -6,13 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { vendorService } from "@/services/vendor.service";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, X, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Upload, Eye } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { productSchema } from "@/validation/schema";
-import Image from "next/image";
+import { useRouter } from "next/navigation";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export function ProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -23,6 +34,8 @@ export function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [selectedImages, setSelectedImages] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [updatingStock, setUpdatingStock] = useState(null);
 
   const {
     register,
@@ -104,27 +117,43 @@ export function ProductsPage() {
     fetchCategories();
   }, [page, search, selectedCategory]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+
     try {
-      const response = await vendorService.deleteProduct(id);
+      const response = await vendorService.deleteProduct(productToDelete._id);
       if (response.status === 200) {
         toast.success(response.message || "Product deleted successfully");
         fetchProducts();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to delete product");
+    } finally {
+      setProductToDelete(null);
     }
   };
 
-  const handleUpdateStock = async (id, stock) => {
+  const handleUpdateStock = async (id, newStock) => {
+    if (updatingStock === id) return;
     try {
-      const response = await vendorService.updateStock(id, Number(stock));
+      setUpdatingStock(id);
+      const response = await vendorService.updateStock(
+        id,
+        parseInt(newStock, 10)
+      );
       if (response.status === 200) {
-        toast.success(response.message || "Stock updated successfully");
-        fetchProducts();
+        toast.success("Stock updated successfully");
+        setProducts(
+          products.map((p) =>
+            p._id === id ? { ...p, stock: parseInt(newStock, 10) } : p
+          )
+        );
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update stock");
+      fetchProducts();
+    } finally {
+      setUpdatingStock(null);
     }
   };
 
@@ -154,7 +183,6 @@ export function ProductsPage() {
     try {
       const formData = new FormData();
 
-      // Add basic product information
       formData.append("name", data.name);
       formData.append("description", data.description);
       formData.append("price", data.price.toString());
@@ -162,10 +190,8 @@ export function ProductsPage() {
       formData.append("content", data.content);
       formData.append("categoryId", data.categoryId);
 
-      // Handle image URLs
       if (selectedImages.length > 0) {
         selectedImages.forEach((image) => {
-          // Check if the image is a File object or URL string
           if (image instanceof File) {
             formData.append("images", image);
           } else if (typeof image === "string") {
@@ -394,6 +420,30 @@ export function ProductsPage() {
         </div>
       )}
 
+      <AlertDialog
+        open={!!productToDelete}
+        onOpenChange={() => setProductToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              product.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-500 hover:bg-red-600"
+              onClick={handleDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="p-6">
         <div className="flex gap-4 mb-6">
           <Input
@@ -445,6 +495,17 @@ export function ProductsPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() =>
+                          router.push(
+                            `/vendor/dashboard/products/${product._id}`
+                          )
+                        }
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleEdit(product)}
                       >
                         <Pencil className="h-4 w-4" />
@@ -452,7 +513,7 @@ export function ProductsPage() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(product._id)}
+                        onClick={() => setProductToDelete(product)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -472,10 +533,22 @@ export function ProductsPage() {
                         <Input
                           type="number"
                           value={product.stock}
-                          onChange={(e) =>
-                            handleUpdateStock(product._id, e.target.value)
-                          }
+                          onChange={(e) => {
+                            const newStock = e.target.value;
+                            setProducts(
+                              products.map((p) =>
+                                p._id === product._id
+                                  ? { ...p, stock: parseInt(newStock, 10) }
+                                  : p
+                              )
+                            );
+                            const timeoutId = setTimeout(() => {
+                              handleUpdateStock(product._id, newStock);
+                            }, 500);
+                            return () => clearTimeout(timeoutId);
+                          }}
                           className="w-20 h-8"
+                          disabled={updatingStock === product._id}
                         />
                       </div>
                     </div>
