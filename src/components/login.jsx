@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { loginSchema } from "@/validation/schema";
 import { authService } from "@/services/auth.service";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import Image from "next/image";
 import { AxiosError } from "axios";
 
