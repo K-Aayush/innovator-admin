@@ -162,10 +162,15 @@ export function ProductsPage() {
       formData.append("content", data.content);
       formData.append("categoryId", data.categoryId);
 
-      // Handle image uploads
+      // Handle image URLs
       if (selectedImages.length > 0) {
-        selectedImages.forEach((image, index) => {
-          formData.append(`images`, image);
+        selectedImages.forEach((image) => {
+          // Check if the image is a File object or URL string
+          if (image instanceof File) {
+            formData.append("images", image);
+          } else if (typeof image === "string") {
+            formData.append("imageUrls", image);
+          }
         });
       }
 

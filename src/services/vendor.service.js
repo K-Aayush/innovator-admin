@@ -40,11 +40,19 @@ export const vendorService = {
     return response.data;
   },
   addProduct: async (formData) => {
-    const response = await apiClient.post("/vendor-add-shop", formData);
+    const response = await apiClient.post("/vendor-add-shop", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   },
   updateProduct: async (id, formData) => {
-    const response = await apiClient.put(`/vendor-products/${id}`, formData);
+    const response = await apiClient.put(`/vendor-products/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return response.data;
   },
   updateStock: async (id, stock) => {
