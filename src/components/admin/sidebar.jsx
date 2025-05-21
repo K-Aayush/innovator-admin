@@ -7,13 +7,10 @@ import {
   LayoutDashboard,
   Users,
   Store,
-  FileText,
-  Settings,
   Bell,
   ChevronLeft,
   Menu,
   UserPlus,
-  MessageSquare,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
@@ -22,11 +19,8 @@ const navigation = [
   { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Users", href: "/admin/dashboard/users", icon: Users },
   { name: "Vendors", href: "/admin/dashboard/vendors", icon: Store },
-  { name: "Content", href: "/admin/dashboard/content", icon: FileText },
   { name: "Add Vendor", href: "/admin/dashboard/add-vendor", icon: UserPlus },
   { name: "Advertisements", href: "/admin/dashboard/ads", icon: Bell },
-  { name: "Messages", href: "/admin/dashboard/messages", icon: MessageSquare },
-  { name: "Settings", href: "/admin/dashboard/settings", icon: Settings },
 ];
 
 export function Sidebar() {
