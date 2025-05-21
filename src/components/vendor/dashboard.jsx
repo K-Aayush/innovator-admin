@@ -63,13 +63,13 @@ export function VendorDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="p-6">
+        <Card className="p-6 bg-blue-100">
           <h3 className="text-sm font-medium text-gray-500">Total Products</h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
             {products.length}
           </p>
         </Card>
-        <Card className="p-6">
+        <Card className="p-6 bg-orange-100">
           <h3 className="text-sm font-medium text-gray-500">
             Total Categories
           </h3>
@@ -77,7 +77,7 @@ export function VendorDashboard() {
             {categories.length}
           </p>
         </Card>
-        <Card className="p-6">
+        <Card className="p-6 bg-purple-100">
           <h3 className="text-sm font-medium text-gray-500">
             Total Stock Value
           </h3>
@@ -85,7 +85,7 @@ export function VendorDashboard() {
             ${totalStockValue.toFixed(2)}
           </p>
         </Card>
-        <Card className="p-6">
+        <Card className="p-6 bg-green-100">
           <h3 className="text-sm font-medium text-gray-500">Average Price</h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
             $

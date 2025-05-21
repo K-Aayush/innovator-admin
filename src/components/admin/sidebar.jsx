@@ -1,0 +1,103 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Users,
+  Store,
+  FileText,
+  Settings,
+  Bell,
+  ChevronLeft,
+  Menu,
+  UserPlus,
+  MessageSquare,
+} from "lucide-react";
+import { useState } from "react";
+import { Button } from "../ui/button";
+
+const navigation = [
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Users", href: "/admin/dashboard/users", icon: Users },
+  { name: "Vendors", href: "/admin/dashboard/vendors", icon: Store },
+  { name: "Content", href: "/admin/dashboard/content", icon: FileText },
+  { name: "Add Vendor", href: "/admin/dashboard/add-vendor", icon: UserPlus },
+  { name: "Advertisements", href: "/admin/dashboard/ads", icon: Bell },
+  { name: "Messages", href: "/admin/dashboard/messages", icon: MessageSquare },
+  { name: "Settings", href: "/admin/dashboard/settings", icon: Settings },
+];
+
+export function Sidebar() {
+  const pathname = usePathname();
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  return (
+    <div
+      className={cn(
+        "fixed h-full bg-white border-r border-gray-200 transition-all duration-300",
+        isExpanded ? "w-72" : "w-20"
+      )}
+    >
+      <div className="flex h-16 shrink-0 items-center justify-between px-6">
+        {isExpanded ? (
+          <img className="h-8 w-auto" src="/logo.jpg" alt="Logo" />
+        ) : (
+          <div className="w-8" />
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? (
+            <ChevronLeft className="h-6 w-6" />
+          ) : (
+            <Menu className="h-6 w-6" />
+          )}
+        </Button>
+      </div>
+
+      <nav className="flex-1 px-6 pb-4">
+        <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <li>
+            <ul role="list" className="-mx-2 space-y-1">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        pathname === item.href
+                          ? "bg-gray-50 text-blue-600"
+                          : "text-gray-700 hover:text-blue-600 hover:bg-gray-50",
+                        "group flex items-center rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
+                        !isExpanded && "justify-center px-3"
+                      )}
+                      title={!isExpanded ? item.name : undefined}
+                    >
+                      <Icon
+                        className={cn(
+                          pathname === item.href
+                            ? "text-blue-600"
+                            : "text-gray-400 group-hover:text-blue-600",
+                          "h-6 w-6 shrink-0",
+                          isExpanded && "mr-3"
+                        )}
+                        aria-hidden="true"
+                      />
+                      {isExpanded && item.name}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  );
+}

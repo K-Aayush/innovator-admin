@@ -25,3 +25,13 @@ export const productSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
   images: z.any().optional(),
 });
+
+export const vendorSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  businessName: z.string().min(1, "Business name is required"),
+  businessDescription: z.string().min(1, "Business description is required"),
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  dob: z.string().min(1, "Date of birth is required"),
+});
