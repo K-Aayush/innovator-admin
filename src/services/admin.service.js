@@ -1,12 +1,15 @@
 import apiClient from "@/lib/axios";
 
 export const adminService = {
-  getUsers: async () => {
-    const response = await apiClient.get("/users");
+  getUsers: async (page = 0, search = "", role = "", status = "") => {
+    const response = await apiClient.get("/users", {
+      params: { page, search, role, status },
+    });
     return response.data;
   },
-  getUserDetails: async () => {
-    const response = await apiClient.get("/users/:userId");
+
+  getUserDetails: async (userId) => {
+    const response = await apiClient.get(`/users/${userId}`);
     return response.data;
   },
   getUserStats: async () => {
