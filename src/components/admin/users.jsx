@@ -27,7 +27,8 @@ export function UsersPage() {
 
   const fetchUserStats = async () => {
     try {
-      const response = await adminService.getUserStats();
+      const response = await adminService.getUsers();
+      console.log("User data Response:", response);
       setUsers(response.data);
     } catch (error) {
       toast.error("Failed to fetch users");
