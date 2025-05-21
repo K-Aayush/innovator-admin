@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card";
 import { adminService } from "@/services/admin.service";
 import { toast } from "sonner";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -38,13 +36,17 @@ export function AdminDashboard() {
             adminService.getUserStats(),
             adminService.getVendorStats(),
             adminService.getLeaderboard(),
-            adminService.getAdStats(),
+            // adminService.getAdStats(),
           ]);
 
+        console.log("userstats:", userStatsRes);
+        console.log("vendorstats:", vendorStatsRes);
+        console.log("leaderboardstats:", leaderboardRes);
+        // console.log("adstats:", adStatsRes);
         setUserStats(userStatsRes.data);
         setVendorStats(vendorStatsRes.data);
         setLeaderboard(leaderboardRes.data);
-        setAdStats(adStatsRes.data);
+        // setAdStats(adStatsRes.data);
       } catch (error) {
         toast.error("Failed to fetch dashboard data");
       } finally {
@@ -55,7 +57,7 @@ export function AdminDashboard() {
     fetchDashboardData();
 
     // Set up real-time updates
-    const interval = setInterval(fetchDashboardData, 30000);
+    // const interval = setInterval(fetchDashboardData);
 
     return () => clearInterval(interval);
   }, []);
