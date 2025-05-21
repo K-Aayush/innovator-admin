@@ -57,7 +57,7 @@ export function AdminDashboard() {
     fetchDashboardData();
 
     // Set up real-time updates
-    const interval = setInterval(fetchDashboardData);
+    const interval = setInterval(fetchDashboardData, 300000);
 
     return () => clearInterval(interval);
   }, []);
