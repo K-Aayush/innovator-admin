@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { adminService } from "@/services/admin.service";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,20 +17,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 
 export function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchEmail, setSearchEmail] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
-  const [banDuration, setBanDuration] = useState("");
+  const [page, setPage] = useState(0);
   const [banReason, setBanReason] = useState("");
+  const [banDuration, setBanDuration] = useState(1);
+  const [showBanDialog, setShowBanDialog] = useState(false);
 
-  const fetchUserStats = async () => {
+  const fetchUsers = async () => {
     try {
-      const response = await adminService.getUsers();
-      console.log("User data Response:", response);
-      setUsers(response.data);
+      setLoading(true);
+      const response = await adminService.getUsers(page, searchEmail);
+      setUsers(response.data.users);
     } catch (error) {
       toast.error("Failed to fetch users");
     } finally {
@@ -38,26 +43,31 @@ export function UsersPage() {
   };
 
   useEffect(() => {
-    fetchUserStats();
-  }, []);
+    fetchUsers();
+  }, [page, searchEmail]);
 
   const handleBanUser = async () => {
-    if (!selectedUser || !banDuration || !banReason) return;
+    if (!selectedUser || !banReason || !banDuration) return;
 
     try {
       await adminService.banUser({
         userId: selectedUser._id,
-        duration: parseInt(banDuration),
+        duration: banDuration,
         reason: banReason,
       });
       toast.success("User banned successfully");
-      setSelectedUser(null);
-      setBanDuration("");
+      setShowBanDialog(false);
       setBanReason("");
-      fetchUserStats();
+      setBanDuration(1);
+      setSelectedUser(null);
+      fetchUsers();
     } catch (error) {
       toast.error("Failed to ban user");
     }
+  };
+
+  const handleViewDetails = (userId) => {
+    router.push(`/admin/dashboard/users/${userId}`);
   };
 
   return (
@@ -95,45 +105,77 @@ export function UsersPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {users
-                .filter((user) =>
-                  user.email.toLowerCase().includes(searchEmail.toLowerCase())
-                )
-                .map((user) => (
-                  <tr key={user._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{user.role}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {user.banned ? (
-                        <span className="text-red-500">Banned</span>
-                      ) : (
-                        <span className="text-green-500">Active</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+              {users.map((user) => (
+                <tr key={user._id}>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <Badge
+                      variant={
+                        user.role === "admin"
+                          ? "destructive"
+                          : user.role === "vendor"
+                          ? "secondary"
+                          : "default"
+                      }
+                    >
+                      {user.role}
+                    </Badge>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {user.banned ? (
+                      <Badge variant="destructive">Banned</Badge>
+                    ) : (
+                      <Badge variant="default">Active</Badge>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-2">
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
-                        onClick={() => setSelectedUser(user)}
-                        disabled={user.banned}
+                        onClick={() => handleViewDetails(user._id)}
                       >
-                        Ban User
+                        View Details
                       </Button>
-                    </td>
-                  </tr>
-                ))}
+                      {!user.banned && user.role !== "admin" && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowBanDialog(true);
+                          }}
+                        >
+                          Ban User
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
+
+        <div className="mt-6 flex justify-between items-center">
+          <Button
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+          >
+            Previous
+          </Button>
+          <span>Page {page + 1}</span>
+          <Button
+            onClick={() => setPage(page + 1)}
+            disabled={users.length < 20}
+          >
+            Next
+          </Button>
+        </div>
       </Card>
 
-      <AlertDialog
-        open={!!selectedUser}
-        onOpenChange={() => setSelectedUser(null)}
-      >
+      <AlertDialog open={showBanDialog} onOpenChange={setShowBanDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Ban User</AlertDialogTitle>
@@ -149,9 +191,9 @@ export function UsersPage() {
               </label>
               <Input
                 type="number"
-                value={banDuration}
-                onChange={(e) => setBanDuration(e.target.value)}
                 min="1"
+                value={banDuration}
+                onChange={(e) => setBanDuration(parseInt(e.target.value))}
               />
             </div>
             <div>
@@ -161,7 +203,7 @@ export function UsersPage() {
               <Input
                 value={banReason}
                 onChange={(e) => setBanReason(e.target.value)}
-                placeholder="Enter reason for ban"
+                placeholder="Enter reason for banning user"
               />
             </div>
           </div>
