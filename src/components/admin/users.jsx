@@ -34,7 +34,7 @@ export function UsersPage() {
     try {
       setLoading(true);
       const response = await adminService.getUsers(page, searchEmail);
-      setUsers(response.data.users);
+      setUsers(response.data);
     } catch (error) {
       toast.error("Failed to fetch users");
     } finally {

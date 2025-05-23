@@ -170,13 +170,13 @@ export function AdminDashboard() {
             <thead>
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  User
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  Email
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Posts
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Level
                 </th>
               </tr>
             </thead>
@@ -184,12 +184,12 @@ export function AdminDashboard() {
               {leaderboard.map((user) => (
                 <tr key={user._id}>
                   <td className="px-6 py-4 whitespace-nowrap">
+                    {user.author.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
                     {user.author.email}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{user.posts}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {user.author.level}
-                  </td>
                 </tr>
               ))}
             </tbody>
