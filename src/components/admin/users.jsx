@@ -13,9 +13,9 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 
@@ -29,12 +29,14 @@ export function UsersPage() {
   const [banReason, setBanReason] = useState("");
   const [banDuration, setBanDuration] = useState(1);
   const [showBanDialog, setShowBanDialog] = useState(false);
+  const [totalPages, setTotalPages] = useState(0);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const response = await adminService.getUsers(page, searchEmail);
-      setUsers(response.data);
+      setUsers(response.data.users);
+      setTotalPages(response.data.pages); // Use 'pages' from response
     } catch (error) {
       toast.error("Failed to fetch users");
     } finally {
@@ -43,7 +45,11 @@ export function UsersPage() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    const debounceTimer = setTimeout(() => {
+      fetchUsers();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
   }, [page, searchEmail]);
 
   const handleBanUser = async () => {
@@ -77,86 +83,97 @@ export function UsersPage() {
         <Input
           placeholder="Search by email..."
           value={searchEmail}
-          onChange={(e) => setSearchEmail(e.target.value)}
+          onChange={(e) => {
+            setSearchEmail(e.target.value);
+            setPage(0); // Reset to first page when searching
+          }}
           className="max-w-xs"
         />
       </div>
 
       <Card className="p-6">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {users.map((user) => (
-                <tr key={user._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <Badge
-                      variant={
-                        user.role === "admin"
-                          ? "destructive"
-                          : user.role === "vendor"
-                          ? "secondary"
-                          : "default"
-                      }
-                    >
-                      {user.role}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {user.banned ? (
-                      <Badge variant="destructive">Banned</Badge>
-                    ) : (
-                      <Badge variant="default">Active</Badge>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetails(user._id)}
-                      >
-                        View Details
-                      </Button>
-                      {!user.banned && user.role !== "admin" && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowBanDialog(true);
-                          }}
-                        >
-                          Ban User
-                        </Button>
-                      )}
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="flex justify-center items-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Actions
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {users.map((user) => (
+                  <tr key={user._id}>
+                    <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <Badge
+                        variant={
+                          user.role === "admin"
+                            ? "destructive"
+                            : user.role === "vendor"
+                            ? "secondary"
+                            : "default"
+                        }
+                      >
+                        {user.role}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.banned ? (
+                        <Badge variant="destructive">Banned</Badge>
+                      ) : (
+                        <Badge variant="default">Active</Badge>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(user._id)}
+                        >
+                          View Details
+                        </Button>
+                        {!user.banned && user.role !== "admin" && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowBanDialog(true);
+                            }}
+                          >
+                            Ban User
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <div className="mt-6 flex justify-between items-center">
           <Button
@@ -165,10 +182,12 @@ export function UsersPage() {
           >
             Previous
           </Button>
-          <span>Page {page + 1}</span>
+          <span>
+            Page {page + 1} of {totalPages}
+          </span>
           <Button
             onClick={() => setPage(page + 1)}
-            disabled={users.length < 20}
+            disabled={page >= totalPages - 1 || totalPages === 0}
           >
             Next
           </Button>
