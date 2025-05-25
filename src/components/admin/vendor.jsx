@@ -125,7 +125,7 @@ export function VendorsPage() {
                     {vendor.totalProducts}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    ${vendor.totalValue.toFixed(2)}
+                    NPR {vendor.totalValue.toFixed(2)}
                   </td>
                 </tr>
               ))}

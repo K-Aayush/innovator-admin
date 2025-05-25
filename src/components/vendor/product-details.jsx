@@ -144,22 +144,30 @@ export function ProductDetails({ id }) {
               </p>
             </div>
 
-            {product.content && (
-              <div className="space-y-2">
-                <h3 className="text-base font-semibold text-gray-900">
-                  Content
-                </h3>
-                <p className="text-gray-600 leading-relaxed first-letter:capitalize">
-                  {product.content}
+            <div className="space-y-2">
+              <h3 className="text-base font-semibold text-gray-900">Content</h3>
+              {product.content && product.content.trim() ? (
+                <ul className="text-gray-600 leading-relaxed list-disc pl-5">
+                  {product.content.split("\n").map((item, index) => (
+                    <li key={index} className="first-letter:capitalize">
+                      {item.startsWith("- ")
+                        ? item.slice(2).trim()
+                        : item.trim()}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-600 leading-relaxed">
+                  No content available
                 </p>
-              </div>
-            )}
+              )}
+            </div>
 
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg shadow-sm hover:bg-green-100 transition-colors duration-200">
                   <span className="text-2xl font-bold tracking-tight">
-                    ${product.price}
+                    NPR {product.price}
                   </span>
                 </div>
                 <div className="border border-orange-500 text-orange-500 px-4 py-2 rounded-full font-medium hover:bg-orange-50 transition-colors duration-200">

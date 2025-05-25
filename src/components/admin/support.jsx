@@ -108,6 +108,9 @@ export function SupportPage() {
                   <td className="px-6 py-4">{ticket.message}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge
+                      className={`${
+                        ticket.status === "answered" ? "bg-orange-500" : ""
+                      }`}
                       variant={
                         ticket.status === "answered" ? "default" : "secondary"
                       }
@@ -170,7 +173,12 @@ export function SupportPage() {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleTicket}>Submit</AlertDialogAction>
+            <AlertDialogAction
+              className={"bg-orange-500"}
+              onClick={handleTicket}
+            >
+              Submit
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

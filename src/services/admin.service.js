@@ -50,23 +50,23 @@ export const adminService = {
     return response.data;
   },
   getReports: async (page = 0, status = "") => {
-    const response = await apiClient.get("/reports", {
+    const response = await apiClient.get("/admin-reports", {
       params: { page, status },
     });
     return response.data;
   },
   handleReport: async (data) => {
-    const response = await apiClient.post("/handle-report", data);
+    const response = await apiClient.post("/admin-handle-report", data);
     return response.data;
   },
   getSupportTickets: async (page = 0, status = "") => {
-    const response = await apiClient.get("/support-tickets", {
+    const response = await apiClient.get("/admin-support-tickets", {
       params: { page, status },
     });
     return response.data;
   },
   handleSupportTicket: async (data) => {
-    const response = await apiClient.post("/handle-support", data);
+    const response = await apiClient.post("/admin-handle-support", data);
     return response.data;
   },
 };

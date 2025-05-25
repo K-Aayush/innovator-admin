@@ -22,7 +22,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// Base URL for static files (remove /api/v1 from NEXT_PUBLIC_API_URL)
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "");
 
 export function ProductsPage() {
@@ -188,9 +187,17 @@ export function ProductsPage() {
 
       formData.append("name", data.name);
       formData.append("description", data.description);
+      // Standardize content by adding "- " to each non-empty line
+      const formattedContent = data.content
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .map((line) =>
+          line.trim().startsWith("- ") ? line.trim() : `- ${line.trim()}`
+        )
+        .join("\n");
+      formData.append("content", formattedContent);
       formData.append("price", data.price.toString());
       formData.append("stock", data.stock.toString());
-      formData.append("content", data.content);
       formData.append("categoryId", data.categoryId);
 
       if (selectedImages.length > 0) {
@@ -291,9 +298,13 @@ export function ProductsPage() {
                   <label className="block text-sm font-medium mb-1">
                     Description
                   </label>
-                  <Input
+                  <textarea
                     {...register("description")}
-                    className={errors.description ? "border-red-500" : ""}
+                    className={`w-full rounded-md border ${
+                      errors.description ? "border-red-500" : "border-input"
+                    } px-3 py-2 resize-y`}
+                    rows={4}
+                    placeholder="Enter a detailed description"
                   />
                   {errors.description && (
                     <p className="text-red-500 text-sm mt-1">
@@ -305,10 +316,13 @@ export function ProductsPage() {
                   <label className="block text-sm font-medium mb-1">
                     Content
                   </label>
-                  <Input
+                  <textarea
                     {...register("content")}
-                    className={errors.content ? "border-red-500" : ""}
-                    placeholder="e.g., 250ml glass bottle"
+                    className={`w-full rounded-md border ${
+                      errors.content ? "border-red-500" : "border-input"
+                    } px-3 py-2 resize-y`}
+                    rows={4}
+                    placeholder="Enter each point on a new line, e.g.,\n- 250ml glass bottle\n- Organic ingredients"
                   />
                   {errors.content && (
                     <p className="text-red-500 text-sm mt-1">
@@ -550,15 +564,9 @@ export function ProductsPage() {
                       </Button>
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {product.description}
-                  </p>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {product.content || "No content"}
-                  </p>
                   <div className="mt-auto">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold">${product.price}</span>
+                      <span className="font-semibold">NPR {product.price}</span>
                       <div className="flex items-center gap-2">
                         <span className="text-sm">Stock:</span>
                         <Input

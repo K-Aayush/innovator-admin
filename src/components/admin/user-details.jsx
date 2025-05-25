@@ -47,8 +47,10 @@ export function UserDetailsPage({ userId }) {
       setLoading(true);
       const response = await adminService.getUserDetails(userId);
       setUser(response.data);
+      console.log(response.data);
     } catch (error) {
       toast.error("Failed to fetch user details");
+      console.log(error);
       router.push("/admin/dashboard/users");
     } finally {
       setLoading(false);
