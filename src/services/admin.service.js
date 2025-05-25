@@ -1,15 +1,20 @@
 import apiClient from "@/lib/axios";
 
 export const adminService = {
-  getUsers: async (page = 0, search = "", role = "", status = "") => {
-    const response = await apiClient.get("/users", {
-      params: { page, search, role, status },
-    });
-    return response.data;
+  getUsers: async (page = 0, search = "") => {
+    try {
+      const response = await apiClient.get("/admin-users", {
+        params: { page, search, limit: 20 },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error in adminService.getUsers:", error.message, error);
+      throw new Error(`Failed to fetch users: ${error.message}`);
+    }
   },
 
   getUserDetails: async (userId) => {
-    const response = await apiClient.get(`/users/${userId}`);
+    const response = await apiClient.get(`/admin-users/${userId}`);
     return response.data;
   },
   getUserStats: async () => {
@@ -42,6 +47,26 @@ export const adminService = {
   },
   getAdStats: async () => {
     const response = await apiClient.get("/ad-stats");
+    return response.data;
+  },
+  getReports: async (page = 0, status = "") => {
+    const response = await apiClient.get("/admin-reports", {
+      params: { page, status },
+    });
+    return response.data;
+  },
+  handleReport: async (data) => {
+    const response = await apiClient.post("/admin-handle-report", data);
+    return response.data;
+  },
+  getSupportTickets: async (page = 0, status = "") => {
+    const response = await apiClient.get("/admin-support-tickets", {
+      params: { page, status },
+    });
+    return response.data;
+  },
+  handleSupportTicket: async (data) => {
+    const response = await apiClient.post("/admin-handle-support", data);
     return response.data;
   },
 };

@@ -82,13 +82,13 @@ export function VendorDashboard() {
             Total Stock Value
           </h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            ${totalStockValue.toFixed(2)}
+            NPR {totalStockValue.toFixed(2)}
           </p>
         </Card>
         <Card className="p-6 bg-green-100">
           <h3 className="text-sm font-medium text-gray-500">Average Price</h3>
           <p className="mt-2 text-3xl font-semibold text-gray-900">
-            $
+            NPR{" "}
             {products.length
               ? (
                   products.reduce((acc, p) => acc + p.price, 0) /
@@ -174,7 +174,7 @@ export function VendorDashboard() {
                     {product.category.name}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    ${product.price}
+                    NPR {product.price}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {product.stock}
