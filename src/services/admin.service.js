@@ -69,4 +69,85 @@ export const adminService = {
     const response = await apiClient.post("/admin-handle-support", data);
     return response.data;
   },
+  // Course Management
+  getCourses: async (params = {}) => {
+    const response = await apiClient.get("/list-courses", { params });
+    return response.data;
+  },
+  getCourseDetails: async (courseId) => {
+    const response = await apiClient.get(`/courses/${courseId}`);
+    return response.data;
+  },
+  createCourse: async (data) => {
+    const response = await apiClient.post("/add-course", data);
+    return response.data;
+  },
+  updateCourse: async (courseId, data) => {
+    const response = await apiClient.put(`/courses/${courseId}`, data);
+    return response.data;
+  },
+  deleteCourse: async (courseId) => {
+    const response = await apiClient.delete(`/delete-courses/${courseId}`);
+    return response.data;
+  },
+  uploadCourseFiles: async (formData, type = "public") => {
+    const endpoint =
+      type === "private"
+        ? "/add-private-course-file"
+        : "/add-public-course-file";
+    const response = await apiClient.post(endpoint, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+  deleteCourseFiles: async (files) => {
+    const response = await apiClient.delete("/delete-course-files", {
+      data: files,
+    });
+    return response.data;
+  },
+  downloadCourseContent: async (courseId, noteId, type) => {
+    const endpoint =
+      type === "video"
+        ? `/courses/download-video/${courseId}/${noteId}`
+        : `/courses/download-pdf/${courseId}/${noteId}`;
+    const response = await apiClient.get(endpoint, { responseType: "blob" });
+    return response.data;
+  },
+
+  // Course Categories
+  getCourseCategories: async (params = {}) => {
+    const response = await apiClient.get("/course-categories", { params });
+    return response.data;
+  },
+  createCourseCategory: async (data) => {
+    const response = await apiClient.post("/admin/course-categories", data);
+    return response.data;
+  },
+  updateCourseCategory: async (categoryId, data) => {
+    const response = await apiClient.put(
+      `/admin/course-categories/${categoryId}`,
+      data
+    );
+    return response.data;
+  },
+  deleteCourseCategory: async (categoryId) => {
+    const response = await apiClient.delete(
+      `/admin/course-categories/${categoryId}`
+    );
+    return response.data;
+  },
+  getCoursesByCategory: async (categoryId, params = {}) => {
+    const response = await apiClient.get(
+      `/course-categories/${categoryId}/courses`,
+      { params }
+    );
+    return response.data;
+  },
+  getCategoryHierarchy: async () => {
+    const response = await apiClient.get("/course-categories/hierarchy");
+    return response.data;
+  },
 };
