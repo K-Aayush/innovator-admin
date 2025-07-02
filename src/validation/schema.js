@@ -35,3 +35,19 @@ export const vendorSchema = z.object({
   phone: z.string().min(1, "Phone number is required"),
   dob: z.string().min(1, "Date of birth is required"),
 });
+
+export const courseSchema = z.object({
+  title: z.string().min(1, "Course title is required"),
+  description: z.string().min(1, "Description is required"),
+  categoryId: z.string().min(1, "Category is required"),
+  level: z.enum(["beginner", "intermediate", "advanced"]),
+  language: z.string().optional(),
+  duration: z.string().optional(),
+  price: z.object({
+    usd: z.number().min(0, "USD price must be non-negative"),
+    npr: z.number().min(0, "NPR price must be non-negative"),
+  }),
+  tags: z.string().optional(),
+  prerequisites: z.string().optional(),
+  learningOutcomes: z.string().optional(),
+});
