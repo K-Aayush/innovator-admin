@@ -12,11 +12,11 @@ import {
   Search,
   Filter,
   Eye,
-  Edit,
   Trash2,
   BookOpen,
   Video,
   FileText,
+  Edit,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -62,16 +62,17 @@ export function CoursesPage() {
       const response = await adminService.getCourses(params);
 
       if (reset) {
-        setCourses(response.data.courses);
+        setCourses(response.data.courses || []);
       } else {
-        setCourses((prev) => [...prev, ...response.data.courses]);
+        setCourses((prev) => [...prev, ...(response.data.courses || [])]);
       }
 
-      setHasMore(response.data.hasMore);
-      setLastId(response.data.nextCursor);
+      setHasMore(response.data.hasMore || false);
+      setLastId(response.data.nextCursor || null);
     } catch (error) {
       toast.error("Failed to fetch courses");
       console.error(error);
+      setCourses([]);
     } finally {
       setLoading(false);
     }
@@ -80,9 +81,10 @@ export function CoursesPage() {
   const fetchCategories = async () => {
     try {
       const response = await adminService.getCourseCategories();
-      setCategories(response.data);
+      setCategories(response.data || []);
     } catch (error) {
       toast.error("Failed to fetch categories");
+      setCategories([]);
     }
   };
 
@@ -306,15 +308,23 @@ export function CoursesPage() {
                   <div className="flex items-center gap-4 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <BookOpen className="h-4 w-4" />
-                      <span>{course.contentCounts?.total || 0}</span>
+                      <span>
+                        {course.contentCounts?.total ||
+                          course.notes?.length ||
+                          0}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <FileText className="h-4 w-4" />
-                      <span>{course.contentCounts?.pdfs || 0}</span>
+                      <span>
+                        {course.contentCounts?.pdfs || course.pdfCount || 0}
+                      </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Video className="h-4 w-4" />
-                      <span>{course.contentCounts?.videos || 0}</span>
+                      <span>
+                        {course.contentCounts?.videos || course.videoCount || 0}
+                      </span>
                     </div>
                   </div>
                 </div>

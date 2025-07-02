@@ -12,10 +12,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { courseSchema } from "@/validation/schema";
 import { Upload, X, Plus, Trash2, ArrowLeft } from "lucide-react";
 
-export function AddCoursePage() {
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "");
+
+export function EditCoursePage({ courseId }) {
   const router = useRouter();
+  const [course, setCourse] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState("");
   const [notes, setNotes] = useState([]);
@@ -24,34 +28,79 @@ export function AddCoursePage() {
     register,
     handleSubmit,
     setValue,
+    reset,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(courseSchema),
-    defaultValues: {
-      level: "beginner",
-      language: "English",
-      price: {
-        usd: "0",
-        npr: "0",
-      },
-    },
   });
+
+  const fetchCourse = async () => {
+    try {
+      setFetchLoading(true);
+      const response = await adminService.getCourseDetails(courseId);
+      const courseData = response.data;
+      setCourse(courseData);
+
+      // Populate form with existing data
+      reset({
+        title: courseData.title,
+        description: courseData.description,
+        categoryId: courseData.category?._id,
+        level: courseData.level,
+        language: courseData.language || "English",
+        duration: courseData.duration || "",
+        price: {
+          usd: courseData.price?.usd?.toString() || "0",
+          npr: courseData.price?.npr?.toString() || "0",
+        },
+        tags: courseData.tags?.join(", ") || "",
+        prerequisites: courseData.prerequisites?.join("\n") || "",
+        learningOutcomes: courseData.learningOutcomes?.join("\n") || "",
+      });
+
+      // Set thumbnail preview
+      if (courseData.thumbnail) {
+        setThumbnailPreview(`${BASE_URL}${courseData.thumbnail}`);
+      }
+
+      // Set notes
+      if (courseData.notes) {
+        setNotes(
+          courseData.notes.map((note, index) => ({
+            id: note._id || Date.now() + index,
+            name: note.name,
+            file: null, // We don't have the file object, just the path
+            existingFile: note.pdf,
+            premium: note.premium,
+            description: note.description || "",
+            duration: note.duration || "",
+            sortOrder: note.sortOrder || index,
+          }))
+        );
+      }
+    } catch (error) {
+      toast.error("Failed to fetch course details");
+      router.push("/admin/dashboard/courses");
+    } finally {
+      setFetchLoading(false);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
       const response = await adminService.getCourseCategories();
       setCategories(response.data);
-      if (response.data.length > 0) {
-        setValue("categoryId", response.data[0]._id);
-      }
     } catch (error) {
       toast.error("Failed to fetch categories");
     }
   };
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (courseId) {
+      fetchCourse();
+      fetchCategories();
+    }
+  }, [courseId]);
 
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
@@ -70,6 +119,7 @@ export function AddCoursePage() {
         id: Date.now(),
         name: "",
         file: null,
+        existingFile: "",
         premium: false,
         description: "",
         duration: "",
@@ -90,14 +140,15 @@ export function AddCoursePage() {
 
   const handleNoteFileChange = (id, file) => {
     updateNote(id, "file", file);
+    updateNote(id, "existingFile", ""); // Clear existing file when new file is selected
   };
 
   const onSubmit = async (data) => {
     try {
       setLoading(true);
 
-      // Upload thumbnail first
-      let thumbnailPath = "";
+      // Upload thumbnail if changed
+      let thumbnailPath = course.thumbnail;
       if (thumbnailFile) {
         const thumbnailFormData = new FormData();
         thumbnailFormData.append("files", thumbnailFile);
@@ -109,11 +160,13 @@ export function AddCoursePage() {
         thumbnailPath = thumbnailResponse.data[0];
       }
 
-      // Upload note files
+      // Process notes
       const processedNotes = [];
       for (const note of notes) {
-        let filePath = "";
+        let filePath = note.existingFile; // Keep existing file if no new file
+
         if (note.file) {
+          // Upload new file
           const fileFormData = new FormData();
           fileFormData.append("files", note.file);
 
@@ -153,16 +206,40 @@ export function AddCoursePage() {
           : [],
       };
 
-      await adminService.createCourse(processedData);
-      toast.success("Course created successfully");
-      router.push("/admin/dashboard/courses");
+      await adminService.updateCourse(courseId, processedData);
+      toast.success("Course updated successfully");
+      router.push(`/admin/dashboard/courses/${courseId}`);
     } catch (error) {
-      console.error("Course creation error:", error);
-      toast.error(error.response?.data?.message || "Failed to create course");
+      console.error("Course update error:", error);
+      toast.error(error.response?.data?.message || "Failed to update course");
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetchLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Course not found
+        </h2>
+        <Button
+          className="mt-4"
+          onClick={() => router.push("/admin/dashboard/courses")}
+        >
+          Back to Courses
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -170,7 +247,7 @@ export function AddCoursePage() {
         <Button variant="outline" onClick={() => router.back()}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <h1 className="text-2xl font-semibold">Add New Course</h1>
+        <h1 className="text-2xl font-semibold">Edit Course</h1>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -328,7 +405,7 @@ export function AddCoursePage() {
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
                 <div className="flex text-sm text-gray-600">
                   <label className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
-                    <span>Upload thumbnail</span>
+                    <span>Upload new thumbnail</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -433,6 +510,11 @@ export function AddCoursePage() {
                       }
                       className="w-full rounded-md border border-input px-3 py-2"
                     />
+                    {note.existingFile && !note.file && (
+                      <p className="text-xs text-green-600 mt-1">
+                        Current file: {note.existingFile.split("/").pop()}
+                      </p>
+                    )}
                     <p className="text-xs text-gray-500 mt-1">
                       Supported: PDF, MP4, AVI, MOV, WMV, FLV, WebM, MKV
                     </p>
@@ -523,10 +605,10 @@ export function AddCoursePage() {
             {loading ? (
               <div className="flex items-center">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Creating...
+                Updating...
               </div>
             ) : (
-              "Create Course"
+              "Update Course"
             )}
           </Button>
         </div>

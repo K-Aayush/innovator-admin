@@ -69,13 +69,14 @@ export const adminService = {
     const response = await apiClient.post("/admin-handle-support", data);
     return response.data;
   },
+
   // Course Management
   getCourses: async (params = {}) => {
     const response = await apiClient.get("/list-courses", { params });
     return response.data;
   },
   getCourseDetails: async (courseId) => {
-    const response = await apiClient.get(`/courses/${courseId}`);
+    const response = await apiClient.get(`/course/${courseId}`);
     return response.data;
   },
   createCourse: async (data) => {
@@ -83,7 +84,7 @@ export const adminService = {
     return response.data;
   },
   updateCourse: async (courseId, data) => {
-    const response = await apiClient.put(`/courses/${courseId}`, data);
+    const response = await apiClient.put(`/update-course/${courseId}`, data);
     return response.data;
   },
   deleteCourse: async (courseId) => {

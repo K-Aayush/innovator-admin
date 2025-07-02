@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Edit,
   Trash2,
   Download,
   Play,
@@ -17,6 +16,7 @@ import {
   Clock,
   Users,
   Star,
+  Edit,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -44,6 +44,7 @@ export function CourseDetailsPage({ courseId }) {
       const response = await adminService.getCourseDetails(courseId);
       setCourse(response.data);
     } catch (error) {
+      console.error("Error fetching course details:", error);
       toast.error("Failed to fetch course details");
       router.push("/admin/dashboard/courses");
     } finally {
@@ -52,7 +53,9 @@ export function CourseDetailsPage({ courseId }) {
   };
 
   useEffect(() => {
-    fetchCourseDetails();
+    if (courseId) {
+      fetchCourseDetails();
+    }
   }, [courseId]);
 
   const handleDeleteCourse = async () => {
@@ -72,7 +75,15 @@ export function CourseDetailsPage({ courseId }) {
         noteId,
         type
       );
-      // Handle download logic here
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${type}-${noteId}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
       toast.success("Download started");
     } catch (error) {
       toast.error("Failed to download content");
@@ -197,7 +208,9 @@ export function CourseDetailsPage({ courseId }) {
                       <FileText className="h-4 w-4 text-gray-500" />
                     </div>
                     <div className="text-sm font-medium">
-                      {course.notes?.length || 0}
+                      {course.contentAnalysis?.totalContent ||
+                        course.notes?.length ||
+                        0}
                     </div>
                     <div className="text-xs text-gray-500">Content Items</div>
                   </div>
@@ -255,6 +268,32 @@ export function CourseDetailsPage({ courseId }) {
                   {course.isPublished ? "Published" : "Draft"}
                 </Badge>
               </div>
+              {course.contentAnalysis && (
+                <>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">
+                      PDFs:
+                    </span>
+                    <p className="text-sm">{course.contentAnalysis.pdfCount}</p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">
+                      Videos:
+                    </span>
+                    <p className="text-sm">
+                      {course.contentAnalysis.videoCount}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">
+                      Estimated Duration:
+                    </span>
+                    <p className="text-sm">
+                      {course.contentAnalysis.estimatedDuration}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </Card>
         </div>
@@ -295,25 +334,27 @@ export function CourseDetailsPage({ courseId }) {
                             Premium
                           </Badge>
                         )}
+                        <span className="text-xs text-gray-500">
+                          {note.fileType?.toUpperCase() || "FILE"}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    {note.fileType === "video" ? (
+                    {note.pdf && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDownload(note._id, "video")}
+                        onClick={() => {
+                          // Open file in new tab
+                          window.open(`${BASE_URL}${note.pdf}`, "_blank");
+                        }}
                       >
-                        <Play className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDownload(note._id, "pdf")}
-                      >
-                        <Download className="h-4 w-4" />
+                        {note.fileType === "video" ? (
+                          <Play className="h-4 w-4" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
                       </Button>
                     )}
                   </div>
@@ -330,8 +371,8 @@ export function CourseDetailsPage({ courseId }) {
 
       {/* Additional Information */}
       {(course.tags?.length > 0 ||
-        course.prerequisites ||
-        course.learningOutcomes) && (
+        course.prerequisites?.length > 0 ||
+        course.learningOutcomes?.length > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {course.tags?.length > 0 && (
             <Card className="p-6">
@@ -346,20 +387,63 @@ export function CourseDetailsPage({ courseId }) {
             </Card>
           )}
 
-          {course.prerequisites && (
+          {course.prerequisites?.length > 0 && (
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Prerequisites</h3>
-              <p className="text-sm text-gray-600">{course.prerequisites}</p>
+              <ul className="text-sm text-gray-600 space-y-1">
+                {course.prerequisites.map((prereq, index) => (
+                  <li key={index}>• {prereq}</li>
+                ))}
+              </ul>
             </Card>
           )}
 
-          {course.learningOutcomes && (
+          {course.learningOutcomes?.length > 0 && (
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-4">Learning Outcomes</h3>
-              <p className="text-sm text-gray-600">{course.learningOutcomes}</p>
+              <ul className="text-sm text-gray-600 space-y-1">
+                {course.learningOutcomes.map((outcome, index) => (
+                  <li key={index}>• {outcome}</li>
+                ))}
+              </ul>
             </Card>
           )}
         </div>
+      )}
+
+      {/* Statistics */}
+      {course.statistics && (
+        <Card className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Course Statistics</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {course.statistics.likes}
+              </div>
+              <div className="text-sm text-gray-500">Likes</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {course.statistics.comments}
+              </div>
+              <div className="text-sm text-gray-500">Comments</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {course.statistics.enrollmentCount}
+              </div>
+              <div className="text-sm text-gray-500">Enrollments</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-yellow-600">
+                {course.statistics.rating.average}
+              </div>
+              <div className="text-sm text-gray-500">
+                Rating ({course.statistics.rating.count} reviews)
+              </div>
+            </div>
+          </div>
+        </Card>
       )}
 
       {/* Delete Confirmation Dialog */}

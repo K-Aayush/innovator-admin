@@ -44,10 +44,33 @@ export const courseSchema = z.object({
   language: z.string().optional(),
   duration: z.string().optional(),
   price: z.object({
-    usd: z.number().min(0, "USD price must be non-negative"),
-    npr: z.number().min(0, "NPR price must be non-negative"),
+    usd: z
+      .string()
+      .min(1, "USD price is required")
+      .transform((val) => parseFloat(val))
+      .refine(
+        (val) => !isNaN(val) && val >= 0,
+        "USD price must be non-negative"
+      ),
+    npr: z
+      .string()
+      .min(1, "NPR price is required")
+      .transform((val) => parseFloat(val))
+      .refine(
+        (val) => !isNaN(val) && val >= 0,
+        "NPR price must be non-negative"
+      ),
   }),
   tags: z.string().optional(),
   prerequisites: z.string().optional(),
   learningOutcomes: z.string().optional(),
+});
+
+export const courseCategorySchema = z.object({
+  name: z.string().min(1, "Category name is required"),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  color: z.string().optional(),
+  parentCategory: z.string().optional(),
+  sortOrder: z.number().optional(),
 });
