@@ -12,7 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { courseSchema } from "@/validation/schema";
 import { Upload, X, Plus, Trash2, ArrowLeft } from "lucide-react";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "");
 
 export function EditCoursePage({ courseId }) {
   const router = useRouter();
