@@ -13,6 +13,8 @@ import {
   UserPlus,
   Flag,
   HelpCircle,
+  BookOpen,
+  FolderTree,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
@@ -22,6 +24,12 @@ const navigation = [
   { name: "Users", href: "/admin/dashboard/users", icon: Users },
   { name: "Vendors", href: "/admin/dashboard/vendors", icon: Store },
   { name: "Add Vendor", href: "/admin/dashboard/add-vendor", icon: UserPlus },
+  { name: "Courses", href: "/admin/dashboard/courses", icon: BookOpen },
+  {
+    name: "Course Categories",
+    href: "/admin/dashboard/course-categories",
+    icon: FolderTree,
+  },
   { name: "Reports", href: "/admin/dashboard/reports", icon: Flag },
   { name: "Support", href: "/admin/dashboard/support", icon: HelpCircle },
   { name: "Advertisements", href: "/admin/dashboard/ads", icon: Bell },
