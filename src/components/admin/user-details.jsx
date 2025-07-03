@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "");
 
 const ITEMS_PER_PAGE = 5;
 
