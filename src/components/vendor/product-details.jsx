@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Badge } from "../ui/badge";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "");
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export function ProductDetails({ id }) {
   const [product, setProduct] = useState(null);
