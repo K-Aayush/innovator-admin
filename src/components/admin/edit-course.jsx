@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { courseSchema } from "@/validation/schema";
-import { Upload, X, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Upload, Plus, Trash2, ArrowLeft } from "lucide-react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL.replace("/api/v1", "");
 
