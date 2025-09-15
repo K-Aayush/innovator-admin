@@ -4,6 +4,7 @@ export const orderService = {
   // Vendor order methods
   getVendorOrders: async (params = {}) => {
     const response = await apiClient.get("/vendor-orders", { params });
+    console.log(response);
     return response.data;
   },
 

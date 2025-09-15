@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-
 const statusConfig = {
   pending: { color: "bg-yellow-100 text-yellow-800", icon: Clock },
   approved: { color: "bg-blue-100 text-blue-800", icon: CheckCircle },
@@ -70,11 +69,13 @@ export function VendorOrdersPage() {
     fetchOrders();
   }, [selectedStatus]);
 
-  const filteredOrders = orders.filter(
-    (order) =>
-      order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredOrders = orders.filter((order) => {
+    const orderNumber = order.orderNumber || order._id || "";
+    return (
+      orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.customer.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    );
+  });
 
   const getStatusIcon = (status) => {
     const config = statusConfig[status] || statusConfig.pending;
