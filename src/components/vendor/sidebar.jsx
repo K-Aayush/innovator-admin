@@ -12,6 +12,7 @@ import {
   Bell,
   ChevronLeft,
   Menu,
+  Package,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "../ui/button";
@@ -19,6 +20,7 @@ import { Button } from "../ui/button";
 const navigation = [
   { name: "Dashboard", href: "/vendor/dashboard", icon: LayoutDashboard },
   { name: "Products", href: "/vendor/dashboard/products", icon: ShoppingBag },
+  { name: "Orders", href: "/vendor/dashboard/orders", icon: Package },
   {
     name: "Categories",
     href: "/vendor/dashboard/categories",
