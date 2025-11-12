@@ -38,6 +38,8 @@ export function ProductsPage() {
   const [previewImages, setPreviewImages] = useState([]);
   const [productToDelete, setProductToDelete] = useState(null);
   const [updatingStock, setUpdatingStock] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const {
     register,
@@ -240,6 +242,22 @@ export function ProductsPage() {
     }
   };
 
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        setStatsLoading(true);
+        const res = await vendorService.getVendorStats();
+        setStats(res.data);
+      } catch (error) {
+        console.error("Failed to load stats:", error);
+        toast.error("Failed to load inventory stats");
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    loadStats();
+  }, []); // Runs only once
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -260,7 +278,56 @@ export function ProductsPage() {
           <Plus className="mr-2 h-4 w-4" /> Add Product
         </Button>
       </div>
+      {statsLoading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="p-4 animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-12 mx-auto mb-1"></div>
+              <div className="h-4 bg-gray-300 rounded w-20 mx-auto"></div>
+            </Card>
+          ))}
+        </div>
+      ) : stats ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          {/* Total Products */}
+          <Card className="p-4 text-center border-blue-200 bg-blue-50">
+            <p className="text-2xl font-bold text-blue-600">{stats.totalProducts}</p>
+            <p className="text-xs text-gray-600 mt-1">Total Products</p>
+          </Card>
 
+          {/* Unique Categories */}
+          <Card className="p-4 text-center border-yellow-200 bg-yellow-50">
+            <p className="text-2xl font-bold text-yellow-600">{stats.uniqueCategories}</p>
+            <p className="text-xs text-gray-600 mt-1">Categories</p>
+          </Card>
+
+          {/* Total Stock */}
+          <Card className="p-4 text-center border-purple-200 bg-purple-50">
+            <p className="text-2xl font-bold text-purple-600">{stats.totalStock}</p>
+            <p className="text-xs text-gray-600 mt-1">Total Stock</p>
+          </Card>
+
+          {/* Out of Stock */}
+          <Card className="p-4 text-center border-red-200 bg-red-50">
+            <p className="text-2xl font-bold text-red-600">{stats.outOfStock}</p>
+            <p className="text-xs text-gray-600 mt-1">Out of Stock</p>
+          </Card>
+
+          {/* Low Stock */}
+          <Card className="p-4 text-center border-orange-200 bg-orange-50">
+            <p className="text-2xl font-bold text-orange-600">{stats.lowStock}</p>
+            <p className="text-xs text-gray-600 mt-1">Low Stock (≤5)</p>
+          </Card>
+
+          {/* Total Value */}
+          <Card className="p-4 text-center border-green-200 bg-green-50">
+            <p className="text-2xl font-bold text-green-600">
+              ₹{stats.totalValue.toLocaleString("en-IN")}
+            </p>
+            <p className="text-xs text-gray-600 mt-1">Inventory Value</p>
+          </Card>
+        </div>
+      ) : null}
       {/* Filters & Sorting */}
       <Card className="p-6">
         <div className="flex flex-wrap gap-4 mb-6">

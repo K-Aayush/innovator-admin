@@ -6,6 +6,11 @@ export const vendorService = {
     return response.data;
   },
 
+  getVendorStats: async () => {
+    const response = await apiClient.get("/vendor-stats");
+    return response.data;
+  },
+
   addCategory: async (data) => {
     const response = await apiClient.post("/vendor-add-category", data);
     return response.data;
